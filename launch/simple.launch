@@ -1,0 +1,12 @@
+<launch>
+ <param name="/use_sim_time" value="true" />
+ <param name="/stereo_init_start" value="false" />
+ <param name="/stereo_init_complete" value="false" />
+ <param name="/settings_filename" value="../kinect_config.cfg" />
+ <node name="ptam_node" type="PTAM" pkg="ptam" output="screen" cwd="node">
+  <param name="input_topic_name" value="/ardrone/image_raw" type="str"/>
+  <param name="frame_width" value="320" type="int" />
+  <param name="frame_height" value="240" type="int" />
+ </node>
+ <node name="stereo_init_state_setter" type="set_stereo_init_state_variables_server" pkg="ptam_improved" output="screen" cwd="node" />
+</launch>

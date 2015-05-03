@@ -1,0 +1,19 @@
+<launch>
+ <!--machine name="IRL-Laptop" address="10.1.36.108" user="niks" password="niks123" default="never"/-->
+  <!--include file="$(find ptam_improved)/launch/tf_test_launchers.launch" /-->
+<!--node pkg="control_drone" name="reszie" type="converter_resize"/-->
+ <param name="/ptam_no" value="0" />
+ <param name="/use_sim_time" value="false" />
+ <!-- <param name="/stereo_init_start" value="start" /> -->
+ <!-- <param name="/stereo_init_complete" value="false" /> -->
+  <param name="/settings_filename" value="/home/nazrul/fuerte_workspace/ptam/kinect_config.cfg"/>
+  <node type="PTAM" name="PTAM" pkg="ptam" cwd="node" output="screen" respawn="true">
+  <param name="input_topic_name" value="/camera/rgb/image_color" type="str"/>
+  <!--param name ="image_transport" value="compressed" type="str"/-->
+  <param name="frame_width" value="640" type="int" />
+  <param name="frame_height" value="480" type="int" />
+ </node>
+
+<!--node pkg="tf" type="static_transform_publisher" name="map_to_world" args="0 0 0 -1.54 0 0  world camera 100" /-->
+
+</launch>

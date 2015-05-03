@@ -1,0 +1,11 @@
+<launch>
+<include file="$(find ptam)/launch/ar_pose_integrated.launch"/>
+<!--  include file="$(find pointcloud_to_laserscan)/pointcloud_to_laser.launch"/-->
+<node pkg="ptam" name="mapping_bitches" type="mapping" output="log" respawn="true"/> 
+<node pkg="ptam" name="traj_check_bitches" type="traj_check" output="screen" respawn="true" /> 
+<node pkg="ptam" name="Frontier_bitches" type="Frontier" output="screen" respawn="true"/> 
+<node pkg="ptam" name="cluster_bitches" type="cluster" output="screen" respawn="true"/> 
+<node pkg="ptam" name="Visibility_bitches" type="Visibility" output="screen" respawn="true"/> 
+<!--node pkg="ptam" name="sca_nbitches" type="cloud_to_scan" output="screen" respawn="true"/--> 
+<node pkg="ptam" name="map_pub" type="map_pub" output="screen" respawn="true"/> 
+</launch>

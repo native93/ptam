@@ -1,0 +1,12 @@
+<launch>
+ <param name="/stereo_init_start" value="false" />
+ <param name="/stereo_init_complete" value="false" />
+ <param name="/settings_filename" value="/opt/ros/diamondback/stacks/iiith_ros_stack/ptam_improved/src/PTAM/settings.cfg" />
+ <node type="PTAM" name="PTAM" pkg="ptam_improved" cwd="node" output="screen" >
+  <param name="input_topic_name" value="/ardrone/image_raw" type="str"/>
+  <param name="frame_width" value="320" type="int" />
+  <param name="frame_height" value="240" type="int" />
+ </node>
+ <node name="stereo_init_state_setter" type="set_stereo_init_state_variables_server" pkg="ptam_improved" output="screen" cwd="node" />
+ <node name="mesh_generator" type="triangulation_test" pkg="graphics_tools" output="screen" />
+</launch>

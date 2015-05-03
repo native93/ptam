@@ -1,0 +1,4 @@
+geometry_msgs/PoseArray Frontiers
+---
+int32 total_points
+int32[] points_visible

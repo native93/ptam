@@ -1,0 +1,62 @@
+<launch>
+
+<!--include file="$(find ptam_improved)/launch/ar_pose_integrated.launch" /-->
+
+<param name="/use_sim_time" value="false" />
+!--node name="base_link2laser" type="static_transform_publisher" pkg="tf"
+args="0 0 0.18 0 0 0 base_link laser 100" /-->
+<!--node name="laser2p3dxcamera" type="static_transform_publisher" pkg="tf"
+args="0.1 0 0.36 -1.454 0.0550 -1.532  laser /p3dx/camera 100" /-->
+<!--node name="camera2p3dx" type="static_transform_publisher" pkg="tf"
+args="0.0 0 0.5 -1.54 0.0 -1.54  world /camera 100" /-->
+<!--node name="marker_right2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.029 -0.145 -0.184 0.729 -0.052 0.012 0.682 /ardrone/marker_right /ardrone/camera 100" /-->
+
+ <node name="map_launcher" type="map_server" pkg="map_server" output="screen" args=" $(find ptam_improved)/launch/map.yaml" />
+ <!--node name="gmapping_map2world" type="static_transform_publisher" pkg="tf" output="screen" args="0 0 0 0 0 0 /world /map 100" /-->
+ <!--node name="tf_pub_launcher" type="start_tf_publisher_server.py" pkg="pynode_launcher" output="screen" cwd="node"/-->
+
+ <!--node name="rosbag_file" type="play" pkg="rosbag" output="screen" args=" $(find ptam_improved)/2012-08-10-17-42-23.bag"/-->
+<node pkg="rviz" type="rviz" name="rviz"/>
+
+
+<!--include file="$(find ptam_improved)/launch/ar_pose_integrated.launch"/-->
+<node name="map2world" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /world /map 100" />
+<node name="ptam2map" type="static_transform_publisher" pkg="tf"
+args="2.612 0.569 0.592 0.017 0.088 -0.777 0.623 /map /ptam/1/map 100" />
+<!--node name= "reading" type="read" pkg="ptam_improved" output="screen"  cwd="node"/-->
+<node name="ptam2map1" type="static_transform_publisher" pkg="tf"
+args="3.525 -1.746 0.407 -0.191 0.034 -0.737 0.647 /map /ptam/2/map 100" />
+<node name="ptam2map2" type="static_transform_publisher" pkg="tf"
+args="3.587 2.294 0.519 -0.028 -0.025 -0.192 0.981 /map /ptam/3/map 100" />
+<node name="ptam2map3" type="static_transform_publisher" pkg="tf"
+args="3.640 -1.714 0.415 -0.089 -0.022 -0.799 0.595 /map /ptam/4/map 100" />
+<node name="ptam2map4" type="static_transform_publisher" pkg="tf"
+args="3.623 2.255 0.743 -0.039 -0.005 -0.181 0.983 /map /ptam/5/map 100" />
+
+<node name="ptam2map5" type="static_transform_publisher" pkg="tf"
+args="2.490 -0.039 0.271 0.013 0.018 -0.805 0.592 /map /ptam/6/map 100" />
+
+<node name="ptam2map6" type="static_transform_publisher" pkg="tf"
+args="2.451 0.502 0.408 0.015 0.048 -0.815 0.577 /map /ptam/7/map 100" />
+<node name="map1" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /map /4/map 100" />
+<node name="map2" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /world /2/map 100" />
+<node name="map3" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /world /3/map 100" />
+<node name="map4" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /world /6/map 100" />
+<node name="map5" type="static_transform_publisher" pkg="tf"
+args="0 0 0 0 0 0 /world /7/map 100" />
+
+
+<node name= "align" type="map_aligner_node2" pkg="joint_p3dx_ardrone_exploration" output="screen"  cwd="node"/>
+<!--param name="/use_sim_time" value="true" /-->
+<!--node name="marker_left2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.076 -0.070 -0.549 0.651 -0.137 0.068 0.744 /ar_marker /ardrone/camera 100" /-->
+
+
+
+</launch>

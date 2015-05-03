@@ -1,0 +1,15 @@
+<launch>
+<node name="base_link2laser" type="static_transform_publisher" pkg="tf"
+args="0 0 0.18 0 0 0 base_link laser 100" />
+<!--node name="laser2p3dxcamera" type="static_transform_publisher" pkg="tf"
+args="0.1 0 0.36 -1.454 0.0550 -1.532  laser /p3dx/camera 100" /-->
+<node name="laser2p3dxcamera" type="static_transform_publisher" pkg="tf"
+args="0.1 0 0.36 -1.454 0.236 -1.532  laser /p3dx/camera 100" />
+<!--node name="marker_right2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.029 -0.145 -0.184 0.729 -0.052 0.012 0.682 /ardrone/marker_right /ardrone/camera 100" /-->
+<node name="marker_left2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.110 -0.094 -0.220 0.759 -0.043 0.043 0.648 /ardrone/marker_left /ardrone/camera 100" />
+
+ <node name="gmapping_map2world" type="static_transform_publisher" pkg="tf" output="screen" args="0 0 0 0 0 0 /gmapping/map /world 100" />
+ <node name="tf_pub_launcher" type="start_tf_publisher_server.py" pkg="pynode_launcher" output="screen" />
+</launch>

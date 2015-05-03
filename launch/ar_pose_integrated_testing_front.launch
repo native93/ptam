@@ -1,0 +1,17 @@
+<launch>
+ <param name="/ptam_no" value="0" />
+ <param name="/use_sim_time" value="true" />
+ <param name="/stereo_init_start" value="false" />
+ <param name="/stereo_init_complete" value="false" />
+ <param name="/settings_filename" value="/opt/ros/diamondback/stacks/iiith_ros_stack/ptam_improved/src/PTAM/settings.cfg" />
+ <node type="PTAM" name="PTAM" pkg="ptam_improved" cwd="node" output="screen" >
+  <param name="input_topic_name" value="/ardrone/image_raw" type="str"/>
+  <param name="frame_width" value="320" type="int" />
+  <param name="frame_height" value="240" type="int" />
+ </node>
+ <node name="tf_pub_launcher" type="start_tf_publisher_server.py" pkg="pynode_launcher" output="screen" />
+ <node name="stereo_init_state_setter" type="set_stereo_init_state_variables_server" pkg="ptam_improved" output="screen" cwd="node" />
+ <node name="gmapping_map2world" type="static_transform_publisher" pkg="tf" output="screen" args="0 0 0 0 0 0 /gmapping/map /world 100" />
+ <!--node name="ardrone_marker_left2ardrone_camera" type="static_transform_publisher" pkg="tf" output="screen" args="-0.263 0.149 -0.180 0.837 -0.538 0.049 0.080 /ardrone/marker_left /ardrone/camera 100" /-->
+ <node name="ardrone_marker_left2ardrone_camera" type="static_transform_publisher" pkg="tf" output="screen" args="0.05 0 0 0.0 0 3.14 /ardrone/marker_left /ardrone/camera 100" />
+</launch>

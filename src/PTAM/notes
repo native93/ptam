@@ -1,0 +1,6 @@
+changes for odometry input
+	-callback in Videosource
+	-passing value back to tracker for stereo init scale
+
+for autonomous
+	-mbspacebar presses should happen by signal by odom or something else.

@@ -1,0 +1,5 @@
+
+---
+geometry_msgs/PoseArray ugv_frontiers
+geometry_msgs/PoseArray uav_frontiers
+geometry_msgs/PoseArray passive_uav_frontiers

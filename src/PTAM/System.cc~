@@ -1,0 +1,385 @@
+// Copyright 2008 Isis Innovation Limited
+#include "System.h"
+#include "OpenGL.h"
+#include <gvars3/instances.h>
+#include <stdlib.h>
+#include "ATANCamera.h"
+#include "TrackerData.h"
+#include "MapPoint.h"
+#include "MapMaker.h"
+#include "Tracker.h"
+#include "ARDriver.h"
+#include "MapViewer.h"
+#include "Map.h"
+#include "MapPoint.h"
+#include "TrackerData.h"
+#include "cvd/image_io.h"
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+
+
+using namespace CVD;
+using namespace std;
+using namespace GVars3;
+
+System::System(ros::NodeHandle &nh)
+  :mVideoSource(nh), mGLWindow(mVideoSource.Size(), "PTAM")
+{
+
+count_file=0;
+
+    GUI.RegisterCommand("exit", GUICommandCallBack, this);
+    GUI.RegisterCommand("quit", GUICommandCallBack, this);
+    GUI.RegisterCommand("KeyPress", GUICommandCallBack, this);
+save_points=false;
+    mimFrameBW.resize(mVideoSource.Size());
+    mimFrameRGB.resize(mVideoSource.Size());
+    // First, check if the camera is calibrated.
+    // If not, we need to run the calibration widget.
+    Vector<NUMTRACKERCAMPARAMETERS> vTest;
+
+    vTest = GV3::get<Vector<NUMTRACKERCAMPARAMETERS> >("Camera.Parameters", ATANCamera::mvDefaultParams, HIDDEN);
+    mpCamera = new ATANCamera("Camera");
+    Vector<2> v2;
+    if(vTest == ATANCamera::mvDefaultParams)
+    {
+	cout << endl;
+	cout << "! Camera.Parameters is not set, need to run the CameraCalibrator tool" << endl;
+	cout << "  and/or put the Camera.Parameters= line into the appropriate .cfg file." << endl;
+	exit(1);
+    }
+
+pos_x_ptr=&pos_x;
+pos_y_ptr=&pos_y;
+first_kf_ptr=&first_kf;
+second_kf_ptr=&second_kf;
+
+
+//    altitude_ptr=&altitude;
+    mpMap = new Map;
+    mpMapMaker = new MapMaker(*mpMap, *mpCamera);
+    mpTracker = new Tracker(mVideoSource.Size(), *mpCamera, *mpMap, *mpMapMaker,nh);
+    mpARDriver = new ARDriver(*mpCamera, mVideoSource.Size(), mGLWindow);
+    mpMapViewer = new MapViewer(*mpMap, mGLWindow);
+    mJL = new JL(*mpMap, *mpCamera, 10000, 0, 2, 0.3, 4, 50);
+
+    GUI.ParseLine("GLWindow.AddMenu Menu Menu");
+    GUI.ParseLine("Menu.ShowMenu Root");
+    GUI.ParseLine("Menu.AddMenuButton Root Reset Reset Root");
+    GUI.ParseLine("Menu.AddMenuButton Root Spacebar PokeTracker Root");
+    GUI.ParseLine("DrawAR=0");
+    GUI.ParseLine("DrawMap=0");
+    GUI.ParseLine("Menu.AddMenuToggle Root \"View Map\" DrawMap Root");
+    GUI.ParseLine("Menu.AddMenuToggle Root \"Draw AR\" DrawAR Root");
+
+    mbDone = false;
+    mbDrawMap=false;
+};
+
+void System::Run()
+{
+std::stringstream ss;
+    while(!mbDone)
+    {
+
+	// We use two versions of each video frame:
+	// One black and white (for processing by the tracker etc)
+	// and one RGB, for drawing.
+
+	// Grab new video frame...
+//mJL->ikeyframeno = 0;
+	if(!mVideoSource.GetAndFillFrameBWandRGB(mimFrameBW, mimFrameRGB,pos_x_ptr,pos_y_ptr,first_kf_ptr,second_kf_ptr))
+	    break;
+
+
+//if(save_points)
+//{
+//mpMapMaker->save_points(count_file,mpTracker->GetCurrentPose());
+
+
+
+/*
+Matrix<3,3> rot;
+printf("saved points\n");
+ss.str("");
+ss<<"/home/irl/workspace/ptam/bin/maps_test/map_"<<count_file<<".csv";
+
+Vector<3>trans;
+myfile.open(ss.str().c_str());
+rot=mpTracker->GetCurrentPose().inverse().get_rotation().get_matrix();
+
+trans=mpTracker->GetCurrentPose().inverse().get_translation();
+
+
+for(size_t i=0; i<mpMap->vpPoints.size(); i++)
+{
+
+if(mpMap->vpPoints[i]->v3WorldPos[0]>10.0||mpMap->vpPoints[i]->v3WorldPos[1]>10.0||mpMap->vpPoints[i]->v3WorldPos[2]>2.0)
+continue;
+if(mpMap->vpPoints[i]->v3WorldPos[0]<-10.0||mpMap->vpPoints[i]->v3WorldPos[1]<-10.0||mpMap->vpPoints[i]->v3WorldPos[2]<-2.0)
+continue;
+
+	myfile<<rot(0,0)*mpMap->vpPoints[i]->v3WorldPos[0]+rot(0,1)*mpMap->vpPoints[i]->v3WorldPos[1]+rot(0,2)*mpMap->vpPoints[i]->v3WorldPos[2]+trans[0]<<","<<rot(1,0)*mpMap->vpPoints[i]->v3WorldPos[0]+rot(1,1)*mpMap->vpPoints[i]->v3WorldPos[1]+rot(1,2)*mpMap->vpPoints[i]->v3WorldPos[2]+trans[1]
+<<","<<rot(2,0)*mpMap->vpPoints[i]->v3WorldPos[0]+rot(2,1)*mpMap->vpPoints[i]->v3WorldPos[1]+rot(2,2)*mpMap->vpPoints[i]->v3WorldPos[2]+trans[2]<<endl;
+
+
+//myfile<<mpMap->vpPoints[i]->v3WorldPos[0]<<","<<mpMap->vpPoints[i]->v3WorldPos[1]<<","<<mpMap->vpPoints[i]->v3WorldPos[2]<<endl;	
+
+}
+myfile.close();
+*/
+
+//save_points=false;
+//count_file+=1;
+//}
+	//fprintf(stderr, "\ric=%d, oc=%d", mVideoSource.ic, mVideoSource.oc);
+	//fflush(stdout);
+	//continue;
+//fprintf(stderr,"stamp%lf\n",time_sec);
+	static bool bFirstFrame = true;
+	if(bFirstFrame)
+	{
+	    mpARDriver->Init();
+	    bFirstFrame = false;
+	}
+
+	mGLWindow.SetupViewport();
+	mGLWindow.SetupVideoOrtho();
+	mGLWindow.SetupVideoRasterPosAndZoom();
+
+	if(!mpMap->IsGood())
+	    mpARDriver->Reset();
+
+	static gvar3<int> gvnDrawMap("DrawMap", 0, HIDDEN|SILENT);
+	static gvar3<int> gvnDrawAR("DrawAR", 0, HIDDEN|SILENT);
+
+	bool bDrawMap = mpMap->IsGood() && mbDrawMap;
+	bool bDrawAR = mpMap->IsGood() && *gvnDrawAR;
+	mpTracker->TrackFrame(mimFrameBW, !bDrawAR && !bDrawMap,pos_x,pos_y,first_kf,second_kf);
+
+
+if(mpMap->vpKeyFrames.size()>0)
+  mpMapMaker->PublishMap(mpTracker->GetCurrentPose());
+if(save_points){
+	save_points = false;
+}
+	mJL->ikeyframeno = mpMapMaker->keyframeadded;
+
+
+	if(bDrawMap)
+{
+	    mpMapViewer->DrawMap(mpTracker->GetCurrentPose(), mimFrameBW);
+}
+	else if(bDrawAR)
+	    mpARDriver->Render(mimFrameRGB, mpTracker->GetCurrentPose());
+ // mJL->ikeyframeno = mpMapMaker->keyframeadded;
+
+	mGLWindow.GetMousePoseUpdate();
+	string sCaption;
+	if(bDrawMap)
+	    sCaption = mpMapViewer->GetMessageForUser();
+	else
+	    sCaption = mpTracker->GetMessageForUser();
+	mGLWindow.DrawCaption(sCaption);
+	mGLWindow.DrawMenus();
+	mGLWindow.swap_buffers();
+	mGLWindow.HandlePendingEvents();
+    }
+    printf("Done!!\n");
+
+    for(unsigned int i=0; i<mpMap->vpKeyFrames.size(); i++)
+                {
+                  ostringstream ost1;
+                  ost1 << "keyframes/" << i << ".jpg";
+                  img_save(mpMap->vpKeyFrames[i]->aLevels[0].im, ost1.str());
+
+                  ostringstream ost2;
+                  ost2 << "keyframes/" << i << ".info";
+                  ofstream ofs2;
+                  ofs2.open(ost2.str().c_str());
+
+                  ofs2 << mpMap->vpKeyFrames[i]->se3CfromW<< endl;
+                  ofs2.close();
+                }
+/*
+                  ostringstream ost2;
+                  ost2 << "keyframes/10vp.info";
+                  ofstream ofs2;
+                  ofs2.open(ost2.str().c_str());
+                  
+ 
+
+pcl::PointCloud<pcl::PointXYZ> cloud;
+for(size_t i=0; i<mpMap->vpPoints.size(); i++)
+{
+	cloud.push_back (pcl::PointXYZ ( mpMap->vpPoints[i]->v3WorldPos[0], mpMap->vpPoints[i]->v3WorldPos[1], mpMap->vpPoints[i]->v3WorldPos[2]));
+	  MapPoint &p= *(mpMap->vpPoints[i]); 
+        // Ensure that this map point has an associated TrackerData struct.
+        if(!p.pTData) p.pTData = new TrackerData(&p);   
+        TrackerData &TData = *p.pTData;
+
+        // Project according to current view, and if it's not in the image, skip.
+        TData.Project(mpMap->vpKeyFrames[10]->se3CfromW,*mpCamera);//equation 2, function in TrackerData.cc 
+        if(!TData.bInImage)
+            continue;
+
+        // Calculate camera projection derivatives of this point.
+        TData.GetDerivsUnsafe(*mpCamera);//equation 7, matrix for warping
+
+        // And check what the PatchFinder (included in TrackerData) makes of the mappoint in this view..
+        TData.nSearchLevel = TData.Finder.CalcSearchLevelAndWarpMatrix(TData.Point, mpMap->vpKeyFrames[10]->se3CfromW, TData.m2CamDerivs);///at what level should point be searched.
+
+        if(TData.nSearchLevel == -1)
+            continue;   // a negative search pyramid level indicates an inappropriate warp for this view, so skip.
+ofs2<<i<<" "<<TData.v2Image[0]<<" "<<TData.v2Image[1]<<"\n";
+}
+ofs2.close();
+
+//}
+cloud.width=mpMap->vpPoints.size();
+cloud.height=1;
+cloud.resize(cloud.width*cloud.height);
+cloud.is_dense=false;
+
+
+pcl::PCDWriter writer;
+writer.write("keyframes/test_pcd.pcd",cloud,false);
+
+*/
+
+    printf("Done!!\n");
+
+}
+#if 0
+void System::FinishHim()
+{
+    printf("avg hit = %lf\n", mpTracker->avgFeatHitRatio);
+
+    //------------------------------
+    int count=0;
+    for(size_t i=0; i<mpMap->vpPoints.size(); i++)
+	count += mpMap->vpPoints[i]->foundFrameCount;
+    printf("avg seen = %lf\n", count/(double)mpMap->vpPoints.size());
+
+    //-----------------------------
+    double dist = 0.0;
+    count=0;
+    for(size_t i=0;i<mpMap->vpPoints.size(); i++)
+    {
+	mpMap->vpPoints[i]->pTData->Project(mpMap->vpKeyFrames[0]->se3CfromW, *mpCamera);
+	Vector<2> v2LastPos = mpMap->vpPoints[i]->pTData->v2Image;
+	for(size_t j=1; j<mpMap->vpKeyFrames.size(); j++)
+	{
+	    mpMap->vpPoints[i]->pTData->Project(mpMap->vpKeyFrames[j]->se3CfromW, *mpCamera);
+	    Vector<2> v2CurrentPos = mpMap->vpPoints[i]->pTData->v2Image; 
+	    if(!(mpMap->vpPoints[i]->pTData->bInImage))
+		break;
+	    dist += sqrt(v2LastPos*v2CurrentPos);
+	    v2LastPos = v2CurrentPos;
+	    count++;
+	}
+    }
+    printf("avg moved = %lf, count=%d\n", (dist/(double)count), count);
+}
+#endif
+
+void System::GUICommandCallBack(void *ptr, string sCommand, string sParams)
+{
+    if(sCommand=="quit" || sCommand == "exit")
+	static_cast<System*>(ptr)->mbDone = true;
+
+    if(sCommand=="KeyPress")
+    {
+	if(sParams == "t")
+	{
+	    printf("\nFinishHim(): \n");
+	    //static_cast<System*>(ptr)->FinishHim();
+	}
+if(sParams=="s")
+{
+		    static_cast<System*>(ptr)->save_points =true;
+}	
+
+if(sParams == "1"){
+static_cast<System*>(ptr)->mpMapViewer->a += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"    \n";
+}
+if(sParams == "2"){
+static_cast<System*>(ptr)->mpMapViewer->a -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+
+if(sParams == "3"){
+static_cast<System*>(ptr)->mpMapViewer->b += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+if(sParams == "4"){
+static_cast<System*>(ptr)->mpMapViewer->b -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+
+if(sParams == "5"){
+static_cast<System*>(ptr)->mpMapViewer->c += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+if(sParams == "6"){
+static_cast<System*>(ptr)->mpMapViewer->c -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+if(sParams == "7"){
+static_cast<System*>(ptr)->mpMapViewer->d += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+if(sParams == "8"){
+static_cast<System*>(ptr)->mpMapViewer->d -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+
+if(sParams == "9"){
+static_cast<System*>(ptr)->mpMapViewer->e += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+if(sParams == "0"){
+static_cast<System*>(ptr)->mpMapViewer->e -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+
+if(sParams == "z"){
+static_cast<System*>(ptr)->mpMapViewer->f += 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+if(sParams == "x"){
+static_cast<System*>(ptr)->mpMapViewer->f -= 0.2;
+std::cerr<<static_cast<System*>(ptr)->mpMapViewer->a<<"    "<<static_cast<System*>(ptr)->mpMapViewer->b<<"     "<<static_cast<System*>(ptr)->mpMapViewer->c<<"     "<<static_cast<System*>(ptr)->mpMapViewer->d<<"     "<<static_cast<System*>(ptr)->mpMapViewer->e<<"     "<<static_cast<System*>(ptr)->mpMapViewer->f<<"     \n";
+}
+
+
+
+	 
+	if(sParams == "m")
+	{
+	    if(	static_cast<System*>(ptr)->mbDrawMap)
+		static_cast<System*>(ptr)->mbDrawMap =false;
+	    else
+	    {
+#ifndef RM
+		if( static_cast<System*>(ptr)->mpMap->IsGood() )
+#endif
+		    static_cast<System*>(ptr)->mbDrawMap =true;
+	    }
+	}
+    }
+}
+
+
+
+
+
+
+
+

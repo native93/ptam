@@ -1,0 +1,6 @@
+geometry_msgs/PoseArray frontiers
+float32 threshold
+---
+int32[] cluster_center
+geometry_msgs/PoseArray clustered_frontiers
+point[] point_info

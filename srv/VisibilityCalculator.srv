@@ -1,0 +1,3 @@
+geometry_msgs/PoseArray ugv_frontiers
+---
+float32[] ugv_frontier_visibility

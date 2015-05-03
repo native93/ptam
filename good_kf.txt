@@ -1,0 +1,17 @@
+scenario 1:
+	constrained:
+		191-251
+		265-306 (ros/ptam press at 262-303)
+	unconstrained:
+		12-211
+		235-280
+		39-198
+
+scenario2:
+	constrained:
+		476-526?? :S
+		692-733 :S
+		731-779
+	unconstrained:
+		86-125
+		295-322

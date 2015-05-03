@@ -1,0 +1,25 @@
+afcr:
+s1c: 0.724422, 0.737634, 0.717041
+
+avg hit = 0.708834
+avg seen = 350.195470
+avg moved = 420.902257
+
+s1u: 0.482750
+
+avg hit = 0.473645
+avg seen = 324.727763
+avg moved = 411.154424
+
+
+s2c:
+
+avg hit = 0.743954
+avg seen = 391.443641
+avg moved = 478.259490
+
+s2u:
+
+avg hit = 0.416431
+avg seen = 267.448485
+avg moved = 382.241403

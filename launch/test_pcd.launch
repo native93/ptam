@@ -1,0 +1,34 @@
+<launch>
+
+<!--include file="$(find ptam_improved)/launch/ar_pose_integrated.launch" /-->
+
+<param name="/use_sim_time" value="false" />
+!--node name="base_link2laser" type="static_transform_publisher" pkg="tf"
+args="0 0 0.18 0 0 0 base_link laser 100" /-->
+<!--node name="laser2p3dxcamera" type="static_transform_publisher" pkg="tf"
+args="0.1 0 0.36 -1.454 0.0550 -1.532  laser /p3dx/camera 100" /-->
+<!--node name="camera2p3dx" type="static_transform_publisher" pkg="tf"
+args="0.0 0 0.5 -1.54 0.0 -1.54  world /camera 100" /-->
+<!--node name="marker_right2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.029 -0.145 -0.184 0.729 -0.052 0.012 0.682 /ardrone/marker_right /ardrone/camera 100" /-->
+
+ <!--node name="mapping" type="mapper_direct" pkg="ugv_uav_collaborative_exploration" output="screen" respawn="true"/-->
+ <!--node name="frontier" type="frontier_extractor_server" pkg="ugv_uav_collaborative_exploration" output="screen" /-->
+ <node name="multi_map_publisher" type="multiple_map_publisher" pkg="multi_map_publisher" output="screen" respawn="true"/>
+ <!--node name="map_launcher" type="map_server" pkg="map_server" output="screen" args=" $(find ptam_improved)/launch/map.yaml" /-->
+ <!--node name="gmapping_map2world" type="static_transform_publisher" pkg="tf" output="screen" args="0 0 0 0 0 0 /world /map 100" /-->
+ <!--node name="tf_pub_launcher" type="start_tf_publisher_server.py" pkg="pynode_launcher" output="screen" cwd="node"/-->
+
+ <!--node name="rosbag_file" type="play" pkg="rosbag" output="screen" args=" $(find ptam_improved)/2012-08-10-17-42-23.bag"/-->
+<!--node pkg="rviz" type="rviz" name="rviz"/-->
+
+
+<include file="$(find ptam_improved)/launch/ar_pose_integrated.launch"/>
+
+ <node name="ptam_reset" type="ptam_reset_server" pkg="ptam_improved" output="screen" respawn="true" />
+
+<!--param name="/use_sim_time" value="true" /-->
+<node name="marker_left2dronecam" type="static_transform_publisher" pkg="tf"
+args="0.076 -0.070 -0.549 0.651 -0.137 0.068 0.744 /ar_marker /ardrone/camera 100" />
+
+</launch>
